@@ -13,19 +13,20 @@ class SequenceStatus(Enum):
 
 class Sequence:
     block_size = 256
-    counter = count()
+    counter = count() # python 标准库提供的整数计数器
 
     def __init__(self, token_ids: list[int], sampling_params = SamplingParams()):
-        self.seq_id = next(Sequence.counter)
-        self.status = SequenceStatus.WAITING
-        self.token_ids = copy(token_ids)
-        self.last_token = token_ids[-1]
-        self.num_tokens = len(self.token_ids)
-        self.num_prompt_tokens = len(token_ids)
+        self.seq_id = next(Sequence.counter) # 递增 id
+        self.status = SequenceStatus.WAITING  # 当前状态
+        self.token_ids = copy(token_ids) # 完整的 token id 序列，后续会追加写入
+        self.last_token = token_ids[-1] # 当前 token id 序列的最后一个 token id，后续随追加写入更新
+        self.num_tokens = len(self.token_ids) # 当前 token id 序列长度，后续随追加写入更新
+        self.num_prompt_tokens = len(token_ids) # 创建时传入的 prompt 的 token id 数，之后不变，为常量
         self.num_cached_tokens = 0
         self.num_scheduled_tokens = 0
         self.is_prefill = True
         self.block_table = []
+        # 保存采样参数
         self.temperature = sampling_params.temperature
         self.max_tokens = sampling_params.max_tokens
         self.ignore_eos = sampling_params.ignore_eos
@@ -64,6 +65,7 @@ class Sequence:
         assert 0 <= i < self.num_blocks
         return self.token_ids[i*self.block_size: (i+1)*self.block_size]
 
+    # 将 token id 追加到 Sequence 保存的序列
     def append_token(self, token_id: int):
         self.token_ids.append(token_id)
         self.last_token = token_id
